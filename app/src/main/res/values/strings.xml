@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">和飞信</string>
+    <string name="account_type">com.chinasofti.rcs.systemaccount.account</string>
+</resources>

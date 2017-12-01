@@ -1,0 +1,16 @@
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="rcs.chinasofti.com"
+    android:contentAuthority="com.chinasofti.rcs.systemaccount.AccountProvider"
+    android:allowParallelSyncs="true"
+    android:supportsUploading="true"
+    android:isAlwaysSyncable="true"
+    android:userVisible="true" />
+
+
+
+<!--
+    allowParallelSyncs 这个表示是否允许多账号同时同步
+    contentAuthority 表示要同步的ContentProvide
+    supportsUploding 表示是否必须notifyChange通知才能同步
+    userVisible 设置是否在“设置”中显示
+-->
