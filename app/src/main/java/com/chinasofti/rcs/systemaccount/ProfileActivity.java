@@ -19,18 +19,17 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        Uri intentData = getIntent().getData();
-        if (isNotEmpty(intentData)) {
-            Cursor cursor = managedQuery(intentData, null, null, null, null);
+        if (getIntent().getData() != null) {
+            //有数据的情况
+            Cursor cursor = managedQuery(getIntent().getData(), null, null, null, null);
             if (cursor.moveToNext()) {
                 String username = cursor.getString(cursor.getColumnIndex("DATA1"));
-                String number = cursor.getString(cursor.getColumnIndex("DATA2"));
-                TextView view = (TextView) findViewById(R.id.profiletext);
-                view.setText("和飞信");
-                doSomething(getPhoneNumber(number));
+                TextView tv = (TextView) findViewById(R.id.profiletext);
+                tv.setText("This is the profile for " + username);
             }
         } else {
-//            handleIntentWithoutData();
+            // 没有带数据的情况
+            finish();
         }
 
     }

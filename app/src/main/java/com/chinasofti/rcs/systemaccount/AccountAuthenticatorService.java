@@ -71,7 +71,7 @@ public class AccountAuthenticatorService extends Service {
          */
         @Override
         public Bundle addAccount(AccountAuthenticatorResponse response, String accountType, String authTokenType, String[] requiredFeatures, Bundle options) throws NetworkErrorException {
-            Intent intent = new Intent(context, AuthenticatorActivity.class);
+            Intent intent = new Intent(context, LoginActivity.class);
             intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE,
                     response);
             Bundle bundle = new Bundle();

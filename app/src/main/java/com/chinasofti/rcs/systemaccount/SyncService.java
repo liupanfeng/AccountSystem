@@ -66,119 +66,96 @@ public class SyncService extends Service {
              Log.d("SyncAdapter", "实现同步数据 ...");
              //实现同步数据
             mContentResolver = mContext.getContentResolver();
-//            try {
-//                performSync(mContext,account,extras,authority,provider,syncResult);
-//            } catch (OperationCanceledException e) {
-//                e.printStackTrace();
-//            }
+            try {
+                performSync(mContext,account,extras,authority,provider,syncResult);
+            } catch (OperationCanceledException e) {
+                e.printStackTrace();
+            }
 
         }
+    }
+
+    private static String UsernameColumn = ContactsContract.RawContacts.SYNC1;
+    private static String PhotoTimestampColumn = ContactsContract.RawContacts.SYNC2;
+
+    private static class SyncEntry {
+        public Long raw_id = 0L;
+        public Long photo_timestamp = null;
     }
 
 
     private static void performSync(Context context, Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult)
             throws OperationCanceledException {
-        HashMap<String, Long> localContacts = new HashMap<String, Long>();
+        HashMap<String, SyncEntry> localContacts = new HashMap<>();
         mContentResolver = context.getContentResolver();
-        Log.d(TAG, "performSync: " + account.toString());
+        Log.i(TAG, "performSync: " + account.toString());
 
-//        Uri uri=Uri.parse("content://com.android.contacts/raw_contacts");
-//        Uri dateUri=Uri.parse("content://com.android.contacts/data");
-//        Cursor cursor = mContentResolver.query(uri, new String[] { "contact_id" },
-//                null, null, null);
-//
-//        while (cursor.moveToNext()) {
-//            String id = cursor.getString(0);
-//            // 2.根据联系人的id，查询data表，把这个id的数据取出来
-//            // 系统api查询data表的时候不是真正的查询的data表，而是查询data表的视图
-//            if (id==null)continue;
-//            Log.d(TAG,"联系人id: " + id);
-//            Cursor dataCursor = mContentResolver.query(dateUri, new String[] { "data1", "mimetype" },
-//                    "raw_contact_id=?", new String[] { id }, null);
-//            if (dataCursor==null){
-//                Log.d(TAG,"dataCursor==null ");
-//                continue;
-//            }else{
-//                int count=dataCursor.getColumnCount();
-//                Log.d(TAG,"count "+count);
-//            }
-//            while (dataCursor.moveToNext()) {
-//                String data1 = dataCursor.getString(0);
-//                Log.d(TAG,"data1=" + data1);
-//                String mimetype = dataCursor.getString(1);
-//                Log.d(TAG,"mimetype=" + mimetype);
-//            }
-//            dataCursor.close();
-//        }
-//        cursor.close();
+        // Load the local contacts
+        Uri rawContactUri = ContactsContract.RawContacts.CONTENT_URI.buildUpon().appendQueryParameter(ContactsContract.RawContacts.ACCOUNT_NAME, account.name).appendQueryParameter(
+                ContactsContract.RawContacts.ACCOUNT_TYPE, account.type).build();
+        Cursor c1 = mContentResolver.query(rawContactUri, new String[] { BaseColumns._ID, UsernameColumn, PhotoTimestampColumn }, null, null, null);
+        while (c1.moveToNext()) {
+            SyncEntry entry = new SyncEntry();
+            entry.raw_id = c1.getLong(c1.getColumnIndex(BaseColumns._ID));
+            entry.photo_timestamp = c1.getLong(c1.getColumnIndex(PhotoTimestampColumn));
+            localContacts.put(c1.getString(1), entry);
+        }
 
-
-//        for (Map.Entry<String,Long> entry:localContacts.entrySet()){
-//           String key= entry.getKey();
-//            Long value=entry.getValue();
-//            Log.i(TAG,key+"----"+value);
-//        }
-
-//        ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
-//        LastFmServer server = AndroidLastFmServerFactory.getServer();
-//        try {
-//            Friends friends = server.getFriends(account.name, "", "50");
-//            for (User user : friends.getFriends()) {
-//                if (!localContacts.containsKey(user.getName())) {
-//                    if (user.getRealName().length() > 0)
-//                        addContact(account, user.getRealName(), user.getName());
-//                    else
-//                        addContact(account, user.getName(), user.getName());
-//                } else {
-//                    Track[] tracks = server.getUserRecentTracks(user.getName(), "true", 1);
-//                    if (tracks.length > 0) {
-//                        updateContactStatus(operationList, localContacts.get(user.getName()), tracks[0]);
-//                    }
-//                }
-//            }
-//            if(operationList.size() > 0)
-//                mContentResolver.applyBatch(ContactsContract.AUTHORITY, operationList);
-//        } catch (Exception e1) {
-//            // TODO Auto-generated catch block
-//            e1.printStackTrace();
-//        }
+        ArrayList<ContentProviderOperation> operationList = new ArrayList<>();
+        try {
+            // If we don't have any contacts, create one. Otherwise, set a
+            // status message
+            if (localContacts.get("小雅") == null) {
+                addContact(account, "小雅", "小雅雅");
+            } else {
+//				if (localContacts.get("小兮兮").photo_timestamp == null || System.currentTimeMillis() > (localContacts.get("小兮兮").photo_timestamp + 604800000L)) {
+//					//You would probably download an image file and just pass the bytes, but this sample doesn't use network so we'll decode and re-compress the icon resource to get the bytes
+//					ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//					Bitmap icon = BitmapFactory.decodeResource(context.getResources(), R.drawable.icon);
+//					icon.compress(CompressFormat.PNG, 0, stream);
+//					updateContactPhoto(operationList, localContacts.get("小兮兮").raw_id, stream.toByteArray());
+//				}
+//				updateContactStatus(operationList, localContacts.get("小兮兮").raw_id, "hunting wabbits");
+            }
+            if (operationList.size() > 0)
+                mContentResolver.applyBatch(ContactsContract.AUTHORITY, operationList);
+        } catch (Exception e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
     }
 
     private static void addContact(Account account, String name, String username) {
         Log.i(TAG, "Adding contact: " + name);
         ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 
-        //Create our RawContact
         ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI);
         builder.withValue(ContactsContract.RawContacts.ACCOUNT_NAME, account.name);
         builder.withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, account.type);
         builder.withValue(ContactsContract.RawContacts.SYNC1, username);
         operationList.add(builder.build());
 
-        //Create a Data record of common type 'StructuredName' for our RawContact
         builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
         builder.withValueBackReference(ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID, 0);
         builder.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
         builder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name);
         operationList.add(builder.build());
 
-        //Create a Data record of custom type "vnd.android.cursor.item/vnd.fm.last.android.profile" to display a link to the Last.fm profile
         builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
         builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
-        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.com.chinasofti.rcs.systemaccount.profile");
+        builder.withValue(ContactsContract.Data.MIMETYPE, "vnd.android.cursor.item/vnd.com.chinasofti.rcs.systemaccount.account.profile");
         builder.withValue(ContactsContract.Data.DATA1, username);
-        builder.withValue(ContactsContract.Data.DATA2, "Last.fm Profile");
-        builder.withValue(ContactsContract.Data.DATA3, "View profile");
+        builder.withValue(ContactsContract.Data.DATA2, "和飞信 Profile");
+        builder.withValue(ContactsContract.Data.DATA3, "发起视频");
         operationList.add(builder.build());
 
         try {
-//            mContentResolver.applyBatch(ContactsContract.AUTHORITY, operationList);
+            mContentResolver.applyBatch(ContactsContract.AUTHORITY, operationList);
         } catch (Exception e) {
-            Log.e(TAG, "Something went wrong during creation! " + e);
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
-
 
 
 
